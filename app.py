@@ -25,7 +25,21 @@ def create_app() -> Flask:
         if request.method == "POST":
             title = (request.form.get("title") or "").strip()
             body = (request.form.get("body") or "").strip()
-            # TASK 01 will add validation here.
+            error = None
+
+            if not title:
+                error = "Title is required"
+            elif not body:
+                error = "Body is required"
+
+            if error:
+                return render_template(
+                    "new_note.html",
+                    title=title,
+                    body=body,
+                    error=error,
+                )
+
             app.notes.append({"title": title, "body": body})
             return redirect(url_for("home"))
         return render_template("new_note.html")
