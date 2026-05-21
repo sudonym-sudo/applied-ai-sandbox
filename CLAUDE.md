@@ -39,6 +39,11 @@ pytest tests/test_task_01.py
 - When unsure, prefer reading the test file first — it tells you exactly
   what behavior is expected.
 
+## Auth
+
+- Use Flask-Login and `werkzeug.security` for auth; do not invent a custom login flow.
+- Password reset and email verification are out of scope for this task.
+
 ## Working with Claude here
 
 - Always read the task file before writing code.
