@@ -14,7 +14,38 @@ def create_app() -> Flask:
 
     # In-memory store for the sandbox. Resets on every restart, which is
     # fine for practice. Real apps use a database.
-    app.notes: list[dict] = []  # type: ignore[attr-defined]
+    class NotesList(list):
+        """Small list subclass that ensures every note dict has a `tags` key.
+
+        This keeps the in-memory shape (plain dicts) while allowing callers
+        to append directly (tests sometimes do) and still get a default
+        `tags` field.
+        """
+
+        @staticmethod
+        def _ensure(note: dict) -> dict:
+            if isinstance(note, dict):
+                note.setdefault("tags", [])
+            return note
+
+        def append(self, note):
+            super().append(self._ensure(note))
+
+        def extend(self, iterable):
+            super().extend(self._ensure(item) for item in iterable)
+
+        def insert(self, index, note):
+            super().insert(index, self._ensure(note))
+
+        def __setitem__(self, index, value):
+            # support slice and single-index assignment
+            if isinstance(index, slice):
+                value = [self._ensure(v) for v in value]
+            else:
+                value = self._ensure(value)
+            super().__setitem__(index, value)
+
+    app.notes: NotesList = NotesList()  # type: ignore[attr-defined]
 
     @app.route("/")
     def home():
