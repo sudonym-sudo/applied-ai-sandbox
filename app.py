@@ -5,6 +5,8 @@ describe exactly what "done" means.
 """
 from __future__ import annotations
 
+import time
+
 from flask import Flask, render_template, request, redirect, url_for
 
 
@@ -26,6 +28,8 @@ def create_app() -> Flask:
         def _ensure(note: dict) -> dict:
             if isinstance(note, dict):
                 note.setdefault("tags", [])
+                note.setdefault("is_pinned", False)
+                note.setdefault("updated_at", time.time())
             return note
 
         def append(self, note):
@@ -49,7 +53,32 @@ def create_app() -> Flask:
 
     @app.route("/")
     def home():
-        return render_template("home.html", notes=app.notes)
+        sorted_notes = sorted(
+            app.notes,
+            key=lambda note: (
+                not note.get("is_pinned", False),
+                -note.get("updated_at", 0),
+            ),
+        )
+        return render_template("home.html", notes=sorted_notes)
+
+    @app.route("/notes/<int:idx>/pin", methods=["POST"])
+    def toggle_pin(idx):
+        if idx < 0 or idx >= len(app.notes):
+            return "Not found", 404
+
+        note = app.notes[idx]
+        note.setdefault("is_pinned", False)
+        note.setdefault("updated_at", time.time())
+
+        desired = request.form.get("is_pinned")
+        if desired is None:
+            note["is_pinned"] = not note["is_pinned"]
+        else:
+            note["is_pinned"] = str(desired).lower() in ("1", "true", "yes", "on")
+
+        note["updated_at"] = time.time()
+        return redirect(url_for("home"))
 
     @app.route("/notes/new", methods=["GET", "POST"])
     def new_note():
@@ -71,7 +100,14 @@ def create_app() -> Flask:
                     error=error,
                 )
 
-            app.notes.append({"title": title, "body": body})
+            app.notes.append(
+                {
+                    "title": title,
+                    "body": body,
+                    "is_pinned": False,
+                    "updated_at": time.time(),
+                }
+            )
             return redirect(url_for("home"))
         return render_template("new_note.html")
 

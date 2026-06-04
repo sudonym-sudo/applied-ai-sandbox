@@ -7,8 +7,12 @@
     body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
     h1 { margin-bottom: 0.25rem; }
     .meta { color: #666; margin-bottom: 1.5rem; }
-    .note { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
+    .note { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; position: relative; }
+    .note.pinned { border-color: #f0b000; background: #fff8e0; }
     .note h3 { margin: 0 0 0.5rem; }
+    .pin-form { position: absolute; top: 1rem; right: 1rem; }
+    .pin-button { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #f0b000; }
+    .pin-button:hover { transform: scale(1.05); }
     a.btn { display: inline-block; background: #1a2540; color: #fff; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; }
   </style>
 </head>
@@ -21,7 +25,11 @@
   <h2 style="margin-top: 2rem;">Your notes ({{ notes|length }})</h2>
   {% if notes %}
     {% for note in notes %}
-      <div class="note">
+      <div class="note{% if note.is_pinned %} pinned{% endif %}">
+        <form class="pin-form" method="POST" action="{{ url_for('toggle_pin', idx=loop.index0) }}">
+          <input type="hidden" name="is_pinned" value="{{ '0' if note.is_pinned else '1' }}">
+          <button type="submit" class="pin-button" aria-label="Toggle pin">{{ '★' if note.is_pinned else '☆' }}</button>
+        </form>
         <h3>{{ note.title }}</h3>
         <p>{{ note.body }}</p>
       </div>
